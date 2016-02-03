@@ -6,7 +6,9 @@ Inspired by [addic7ed-ruby](https://github.com/michaelbaudino/addic7ed-ruby) wit
 
 ## Installation
 
+```bash
     $ gem install get-addic7ed
+```
 
 ## Usage
 
