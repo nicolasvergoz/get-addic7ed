@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+require "bundler/setup"
+require "optparse"
+require "get-addic7ed"
+
+ARGV << '-h' if ARGV.empty?
+
+# Options
+options = {}
+
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage :\tget-addic7ed [options] <file1> [<file2>, <file3>, ...]\n"
+
+  # Help
+  opts.on_tail("-h", "--help", "Display this actual help page") do
+    puts opts
+    exit
+  end
+
+  # All Languages
+  opts.on_tail("-L", "--all-languages", "List all available languages") do
+    puts "All available languages :"
+    GetAddic7ed::LANGUAGES.each do |lang, infos|
+      puts "#{lang}:\t#{infos[:name]}"
+    end
+    exit
+  end
+
+  # Version
+  opts.on_tail("-V", "--version", "Get get-addic7ed version") do
+    puts "v#{GetAddic7ed::VERSION}"
+    exit
+  end
+
+  # Language
+  opts.on("-l LANGUAGE", "--language LANGUAGE", "Language code for your subtitle (French by default)") do |l|
+    options[:language] = l
+  end
+
+  # Choose manually
+  opts.on("-c", "--choose", "Choose your subitle manually") do |c|
+    options[:choose] = c
+  end
+
+  #Include Tag
+  opts.on("-t", "--tagged", "Include language tag in filename") do |t|
+    options[:tagged] = t
+  end
+
+  # Verbose
+  opts.on("-v", "--verbose", "Display more details") do |v|
+    options[:verbose] = v
+  end
+
+  # Quiet
+  opts.on("-q", "--quiet", "Run without output (cron-mode)") do |q|
+    options[:quiet] = q
+  end
+
+  # Do not download
+  opts.on("-n", "--do-not-download", "Do not download the subtitle") do |n|
+    options[:nodownload] = n
+  end
+
+  # Debbug mode
+=begin
+  opts.on("-d", "--debug", "Debug mode [do not use]") do |d|
+    options[:debug] = d
+  end
+=end
+
+end
+
+optparse.parse!
+
+# By default
+options[:filenames]     = ARGV
+options[:language]    ||= 'fr'
+options[:choose]      ||= false
+options[:tagged]      ||= false
+options[:verbose]     ||= false
+options[:quiet]       ||= false
+options[:nodownload]  ||= false
+
+# Set option in module GetAddic7ed
+GetAddic7ed::OPT_CHOOSE       = options[:choose]
+GetAddic7ed::OPT_TAGGED       = options[:tagged]
+GetAddic7ed::OPT_VERBOSE      = options[:verbose]
+GetAddic7ed::OPT_QUIET        = options[:quiet]
+GetAddic7ed::OPT_NODOWNLOAD   = options[:nodownload]
+
+options[:filenames].each do |filename|
+  unless File.file? filename
+    puts "File Error : #{filename}\nSkipping..." unless options[:quiet]
+    next
+  end
+
+  #TODO if it's a directory explore videos files
+
+  begin
+
+    puts "===\tFile\t===" if options[:verbose]
+    file =  GetAddic7ed::VideoFile.new(ARGV[0])
+    file.inspect if options[:verbose]
+
+    puts "\n===\tShow\t===" if options[:verbose]
+    episode = GetAddic7ed::Episode.new( file.filepath )
+    episode.inspect if options[:verbose]
+
+    puts "\n===\tSubtitle\t===" if options[:verbose]
+    subtitle = GetAddic7ed::Subtitle.new( episode, options[:language] )
+    subtitle.inspect if options[:verbose]
+
+    unless options[:nodownload]
+      puts "\nDownloading..." if options[:verbose]
+      subtitle.download_sub
+    else
+      puts "[Not Downloaded]"
+    end
+
+  rescue GetAddic7ed::InvalidFile
+    puts "Error : Argument Is Not A File"
+  rescue GetAddic7ed::ConnectionError
+    puts "Error : Failed To Reach Addic7ed.com"
+  rescue GetAddic7ed::ShowNotFound
+    puts "Error : Show Not Found"
+  rescue GetAddic7ed::NoSubtitleFound
+    puts "Error : No Subtitle Found"
+  rescue GetAddic7ed::DownloadError
+    puts "Error : Download Error"
+  rescue GetAddic7ed::ConnectionError
+    puts "Error : Connection Error"
+  rescue GetAddic7ed::DownloadLimitReached
+    puts "Error : You Have Reach The Download Limit On Addic7ed.com"
+  rescue GetAddic7ed::SubtitleCannotBeSaved
+    puts "Error : Subtitle Can't Be Save"
+  end
+
+  puts "Done." unless options[:quiet]
+end
+
