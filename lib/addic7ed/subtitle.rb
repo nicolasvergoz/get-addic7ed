@@ -5,38 +5,57 @@ require 'net/http'
 
 module GetAddic7ed
   class Subtitle
-    attr_reader :episode, :lang, :link, :page_link
+    attr_reader :episode, :lang, :page_link, :all, :link, :group
 
     def initialize episode, lang = 'fr'
       @episode  = episode # Episode instance
       @lang     = lang
       @page     = get_page_link
-      @link     = get_subtitle_link
+
+      @all = get_subtitles
+      if @all.length == 1
+        @link   = @all.first[:link]
+        @group  = @all.first[:group]
+      end
+
     end
 
     def inspect
-      puts "Sub Lang".ljust(20) + ": #{GetAddic7ed::LANGUAGES[@lang][:name]}"
-      puts "Hearing Impaired".ljust(20) + ": #{@hi}"
-      puts "Page Link".ljust(20) + ": #{@page}"
-      puts "Download Link".ljust(20) + ": #{@link}"
+      puts "Sub Lang".ljust(25) + ": #{GetAddic7ed::LANGUAGES[@lang][:name]}"
+      #TODO puts "Hearing Impaired".ljust(25) + ": #{@hi}"
+      puts "Page Link".ljust(25) + ": #{@page}"
+      unless @link == nil
+        puts "Group".ljust(25) + ": #{@group}"
+        puts "Download Link".ljust(25) + ": #{@link}"
+      else
+        puts "#{@all.length} subtitles available"
+=begin
+        @all.each do |item|
+          print "\n-".ljust(3)
+          print "#{item[:group]}".ljust(25)
+          print "#{item[:lang]}".ljust(25)
+          print "#{item[:completed]}".ljust(20)
+        end
+        print "\n"
+=end
+      end
+
     end
 
     def get_page_link
       return "http://www.addic7ed.com/ajax_loadShow.php?show=#{@episode.id}&season=#{@episode.season}&langs=&hd=undeENDed&hi=#{@hi}"
     end
 
-    def get_subtitle_link
+    def get_subtitles
       puts "Searching for <#{GetAddic7ed::LANGUAGES[@lang][:name]}> subtitles..." unless GetAddic7ed::OPT_QUIET
 
       # sub list
       sub_list = get_sub_list
 
-      if sub_list.length == 1
-        return sub_list.first[:link]
-      elsif sub_list.length == 0
+      if sub_list.length == 0
         raise NoSubtitleFound
       else
-        return sub_list[choose_sub(sub_list)][:link]
+        return sub_list
       end
     end
 
@@ -134,6 +153,12 @@ module GetAddic7ed
     end
 
     def download_sub
+
+      if @link == nil
+        the_one = @all[choose_sub(@all)]
+        @link   = the_one[:link]
+      end
+
       dir_path = File.dirname(@episode.filepath)
       sub_name = File.basename(@episode.filepath, '.*')
 
