@@ -90,5 +90,9 @@ module GetAddic7ed
       puts "Episode".ljust(10) + ": #{@episode}"
     end
 
+    def to_h
+      return {id: @id, title: @title, season: @season, episode: @episode, filename: @filename, filepath: @filepath}
+    end
+
   end
 end

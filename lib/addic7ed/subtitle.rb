@@ -5,7 +5,7 @@ require 'net/http'
 
 module GetAddic7ed
   class Subtitle
-    attr_reader :episode, :lang, :page_link, :all, :link, :group
+    attr_reader :episode, :lang, :page, :all, :link, :group
 
     def initialize episode, lang = 'fr'
       @episode  = episode # Episode instance
@@ -177,6 +177,10 @@ module GetAddic7ed
       rescue
         raise DownloadError
       end
+    end
+
+    def to_h
+      return {episode: @episode.to_h, lang: @lang, page: @page, all: @all, link: @link, group: @group}
     end
 
   end
