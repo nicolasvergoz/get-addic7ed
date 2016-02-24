@@ -6,7 +6,7 @@ require 'addic7ed/version'
 Gem::Specification.new do |spec|
   spec.name          = "get-addic7ed"
   spec.version       = GetAddic7ed::VERSION
-  spec.date          = '2016-01-27'
+  spec.date          = Time.new.strftime('%Y-%m-%d')
   spec.authors       = ["Nicolas Vergoz"]
   spec.email         = ["nicolas.vergoz@gmail.com"]
 
